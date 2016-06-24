@@ -48,6 +48,14 @@ impl<'a, S: BitStorage + 'a> BitSliceMut<'a, S> {
         self.capacity
     }
 
+    pub fn reborrow<'b>(&'b mut self) -> BitSliceMut<'b, S> {
+        BitSliceMut {
+            pointer: self.pointer,
+            capacity: self.capacity,
+            phantom: self.phantom,
+        }
+    }
+
     pub fn split_at(&self, index: usize) -> (BitSlice<S>, BitSlice<S>) {
         self.panic_index_not_on_storage_bound(index);
         let data_index = S::compute_data_index(index);
@@ -61,7 +69,7 @@ impl<'a, S: BitStorage + 'a> BitSliceMut<'a, S> {
         }
     }
 
-    pub fn split_at_mut(&mut self, index: usize) -> (BitSliceMut<S>, BitSliceMut<S>) {
+    pub fn split_at_mut(self, index: usize) -> (BitSliceMut<'a, S>, BitSliceMut<'a, S>) {
         self.panic_index_not_on_storage_bound(index);
         let data_index = S::compute_data_index(index);
         let (capacity_left, capacity_right) = self.compute_capacities(index);
@@ -501,6 +509,7 @@ mod tests {
         slice.set(15, true);
 
         {
+            let slice = slice.reborrow();
             let (mut left, mut right) = slice.split_at_mut(8);
 
             assert_eq!(left[0], true);
